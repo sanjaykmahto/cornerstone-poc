@@ -16,6 +16,10 @@ import {
   createImageIdsAndCacheMetaData,
   initDemo,
 } from "./utils/demo/helpers";
+import {
+  cornerstoneNiftiImageVolumeLoader,
+  Enums as NiftiEnums,
+} from "./nifti-volume-loader";
 
 function Volumerendering3d() {
   useEffect(() => {
@@ -75,14 +79,25 @@ function Volumerendering3d() {
         is3DViewport: true,
       });
 
-      // Get Cornerstone imageIds and fetch metadata into RAM
-      const imageIds = await createImageIdsAndCacheMetaData({
-        StudyInstanceUID:
-          "1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339",
-        SeriesInstanceUID:
-          "1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409",
-        wadoRsRoot: "https://domvja9iplmyu.cloudfront.net/dicomweb",
-      });
+      // // Get Cornerstone imageIds and fetch metadata into RAM
+      // const imageIds = await createImageIdsAndCacheMetaData({
+      //   StudyInstanceUID:
+      //     "1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339",
+      //   SeriesInstanceUID:
+      //     "1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409",
+      //   wadoRsRoot: "https://domvja9iplmyu.cloudfront.net/dicomweb",
+      // });
+
+      volumeLoader.registerVolumeLoader(
+        "nifti",
+        cornerstoneNiftiImageVolumeLoader
+      );
+
+      const niftiURL = "NIFTI_URL";
+      const volumeId = "nifti:" + niftiURL;
+
+      // This will load the nifti file, no need to call .load again for nifti
+      await volumeLoader.createAndCacheVolume(volumeId);
 
       // Instantiate a rendering engine
       renderingEngine = new RenderingEngine(renderingEngineId);
@@ -106,13 +121,13 @@ function Volumerendering3d() {
       // Set the tool group on the viewports
       toolGroup.addViewport(viewportId, renderingEngineId);
 
-      // Define a volume in memory
-      const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-        imageIds,
-      });
+      // // Define a volume in memory
+      // const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+      //   imageIds,
+      // });
 
-      // Set the volume to load
-      volume.load();
+      // // Set the volume to load
+      // volume.load();
       viewport = renderingEngine.getViewport(viewportId);
 
       addButtonToToolbar({
@@ -120,16 +135,16 @@ function Volumerendering3d() {
         onClick: () => {
           // Get the rendering engine
           const renderingEngine = getRenderingEngine(renderingEngineId);
-  
+
           // Get the volume viewport
           const viewport = renderingEngine.getViewport(viewportId);
-  
+
           // Apply the rotation to the camera of the viewport
           viewport.setProperties({ rotation: Math.random() * 360 });
           viewport.render();
         },
       });
-  
+
       addDropdownToToolbar({
         options: {
           values: CONSTANTS.VIEWPORT_PRESETS.map((preset) => preset.name),
@@ -154,8 +169,6 @@ function Volumerendering3d() {
     }
 
     run();
-
-    
 
     return () => {};
   }, []);

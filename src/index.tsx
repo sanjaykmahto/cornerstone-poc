@@ -10,7 +10,7 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <>
-    <App />
+    {/* <App /> */}
     <Volumerendering3d />
   </>
 );
