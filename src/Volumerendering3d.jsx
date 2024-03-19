@@ -10,33 +10,29 @@ import {
 } from "@cornerstonejs/core";
 import * as cornerstoneTools from "@cornerstonejs/tools";
 import {
+  initDemo,
   addButtonToToolbar,
   addDropdownToToolbar,
-  addManipulationBindings,
-  createImageIdsAndCacheMetaData,
-  initDemo,
+  addManipulationBindings
 } from "./utils/demo/helpers";
 import {
-  cornerstoneNiftiImageVolumeLoader,
-  Enums as NiftiEnums,
+  cornerstoneNiftiImageVolumeLoader
 } from "./nifti-volume-loader";
+
+const NIFTI_URL = 'http://127.0.0.1:8080/axial.nii.gz'
 
 function Volumerendering3d() {
   useEffect(() => {
-    const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
+    const { ToolGroupManager } = cornerstoneTools;
 
     const { ViewportType } = Enums;
-    const { MouseBindings } = csToolsEnums;
 
     // Define a unique id for the volume
     let renderingEngine;
-    const volumeName = "CT_VOLUME_ID"; // Id of the volume less loader prefix
-    const volumeLoaderScheme = "cornerstoneStreamingImageVolume"; // Loader id which defines which volume loader to use
-    const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
     const renderingEngineId = "myRenderingEngine";
     const viewportId = "3D_VIEWPORT";
 
-    const size = "500px";
+    const size = "700px";
     const content = document.getElementById("content");
     const viewportGrid = document.createElement("div");
 
@@ -79,21 +75,12 @@ function Volumerendering3d() {
         is3DViewport: true,
       });
 
-      // // Get Cornerstone imageIds and fetch metadata into RAM
-      // const imageIds = await createImageIdsAndCacheMetaData({
-      //   StudyInstanceUID:
-      //     "1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339",
-      //   SeriesInstanceUID:
-      //     "1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409",
-      //   wadoRsRoot: "https://domvja9iplmyu.cloudfront.net/dicomweb",
-      // });
-
       volumeLoader.registerVolumeLoader(
         "nifti",
         cornerstoneNiftiImageVolumeLoader
       );
 
-      const niftiURL = "NIFTI_URL";
+      const niftiURL = NIFTI_URL;
       const volumeId = "nifti:" + niftiURL;
 
       // This will load the nifti file, no need to call .load again for nifti
@@ -103,7 +90,6 @@ function Volumerendering3d() {
       renderingEngine = new RenderingEngine(renderingEngineId);
 
       // Create the viewports
-
       const viewportInputArray = [
         {
           viewportId: viewportId,
@@ -121,13 +107,6 @@ function Volumerendering3d() {
       // Set the tool group on the viewports
       toolGroup.addViewport(viewportId, renderingEngineId);
 
-      // // Define a volume in memory
-      // const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-      //   imageIds,
-      // });
-
-      // // Set the volume to load
-      // volume.load();
       viewport = renderingEngine.getViewport(viewportId);
 
       addButtonToToolbar({
@@ -169,7 +148,6 @@ function Volumerendering3d() {
     }
 
     run();
-
     return () => {};
   }, []);
 

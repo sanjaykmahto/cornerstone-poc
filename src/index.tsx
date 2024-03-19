@@ -4,6 +4,7 @@ import App from "./App";
 import Volumerendering3d from "./Volumerendering3d";
 import reportWebVitals from "./reportWebVitals";
 import "./index.css";
+import Segmentation from "./Segmentation";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
@@ -11,7 +12,8 @@ const root = ReactDOM.createRoot(
 root.render(
   <>
     {/* <App /> */}
-    <Volumerendering3d />
+    {/* <Volumerendering3d /> */}
+    <Segmentation/>
   </>
 );
 
