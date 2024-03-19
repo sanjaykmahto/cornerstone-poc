@@ -16,7 +16,7 @@ import {
 } from "./utils/demo/helpers";
 import { cornerstoneNiftiImageVolumeLoader } from "./nifti-volume-loader";
 
-const NIFTI_URL = "Add Nifti Url Here";
+const NIFTI_URL = "/main.nii.gz";
 
 function Segmentation() {
   //Creating Refs
@@ -53,6 +53,7 @@ function Segmentation() {
     // Define a unique id for the volume
     const niftiURL = NIFTI_URL; // NIFTI Url
     const volumeId = "nifti:" + niftiURL;
+    const segmentationURL = "nifti:/ild.nii.gz";
     const segmentationId = "MY_SEGMENTATION_ID";
     const toolGroupId = "MY_TOOLGROUP_ID";
     const size = "500px";
@@ -221,37 +222,30 @@ function Segmentation() {
       ]);
 
       const segmentationVolume = cornerstone.cache.getVolume(segmentationId);
-      const scalarData = segmentationVolume.scalarData;
+      const actualSegmentationVolume = cornerstone.cache.getVolume(segmentationURL);
+      // segmentationVolume.scalarData = new Uint8Array(actualSegmentationVolume.scalarData.buffer);
       const { dimensions } = segmentationVolume;
 
-      let innerRadius = dimensions[0] / 8;
-      let outerRadius = dimensions[0] / 4;
-      let centerOffset = [0, 0, 0];
-      const center = [
-        dimensions[0] / 2 + centerOffset[0],
-        dimensions[1] / 2 + centerOffset[1],
-        dimensions[2] / 2 + centerOffset[2],
-      ];
+      // let innerRadius = dimensions[0] / 8;
+      // let outerRadius = dimensions[0] / 4;
+      // let centerOffset = [0, 0, 0];
+      // const center = [
+      //   dimensions[0] / 2 + centerOffset[0],
+      //   dimensions[1] / 2 + centerOffset[1],
+      //   dimensions[2] / 2 + centerOffset[2],
+      // ];
 
       let voxelIndex = 0;
 
       for (let z = 0; z < dimensions[2]; z++) {
         for (let y = 0; y < dimensions[1]; y++) {
           for (let x = 0; x < dimensions[0]; x++) {
-            const distanceFromCenter = Math.sqrt(
-              (x - center[0]) * (x - center[0]) +
-                (y - center[1]) * (y - center[1]) +
-                (z - center[2]) * (z - center[2])
-            );
-            if (distanceFromCenter < innerRadius) {
-              scalarData[voxelIndex] = 5;
-            } else if (distanceFromCenter < outerRadius) {
-              scalarData[voxelIndex] = 6;
-            }
+            segmentationVolume.scalarData[voxelIndex] = parseInt(actualSegmentationVolume.scalarData[voxelIndex])
             voxelIndex++;
           }
         }
       }
+      console.log("LOADED")
     }
 
     /**
@@ -386,6 +380,9 @@ function Segmentation() {
 
       // This will load the nifti file, no need to call .load again for nifti
       await volumeLoader.createAndCacheVolume(volumeId);
+      await volumeLoader.createAndCacheVolume(segmentationURL)
+      
+
 
       // Add some segmentations based on the source data volume
       await addSegmentationsToState();
