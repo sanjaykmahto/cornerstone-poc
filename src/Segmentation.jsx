@@ -1,6 +1,8 @@
 /* eslint-disable jsx-a11y/heading-has-content */
 import { useEffect, useRef } from "react";
 import {
+  CONSTANTS,
+  utilities,
   RenderingEngine,
   Enums,
   setVolumesForViewports,
@@ -42,6 +44,7 @@ function Segmentation() {
       PanTool,
       ZoomTool,
       StackScrollTool,
+      TrackballRotateTool,
       StackScrollMouseWheelTool,
       utilities: cstUtils,
     } = cornerstoneTools;
@@ -56,6 +59,7 @@ function Segmentation() {
     const segmentationURL = "nifti:/ild.nii.gz";
     const segmentationId = "MY_SEGMENTATION_ID";
     const toolGroupId = "MY_TOOLGROUP_ID";
+    const toolGroupId3d = "MY_TOOLGROUP_ID_3d";
     const size = "500px";
     const content = contentRef.current;
     const viewportGrid = document.createElement("div");
@@ -67,21 +71,26 @@ function Segmentation() {
     const element1 = document.createElement("div");
     const element2 = document.createElement("div");
     const element3 = document.createElement("div");
+    const element4 = document.createElement("div");
     element1.style.width = size;
     element1.style.height = size;
     element2.style.width = size;
     element2.style.height = size;
     element3.style.width = size;
     element3.style.height = size;
+    element4.style.width = size;
+    element4.style.height = size;
 
     // Disable right click context menu so we can have right click tools
     element1.oncontextmenu = (e) => e.preventDefault();
     element2.oncontextmenu = (e) => e.preventDefault();
     element3.oncontextmenu = (e) => e.preventDefault();
+    element4.oncontextmenu = (e) => e.preventDefault();
 
     viewportGrid.appendChild(element1);
     viewportGrid.appendChild(element2);
     viewportGrid.appendChild(element3);
+    viewportGrid.appendChild(element4);
 
     content.appendChild(viewportGrid);
 
@@ -222,30 +231,23 @@ function Segmentation() {
       ]);
 
       const segmentationVolume = cornerstone.cache.getVolume(segmentationId);
-      const actualSegmentationVolume = cornerstone.cache.getVolume(segmentationURL);
-      // segmentationVolume.scalarData = new Uint8Array(actualSegmentationVolume.scalarData.buffer);
+      const actualSegmentationVolume =
+        cornerstone.cache.getVolume(segmentationURL);
       const { dimensions } = segmentationVolume;
-
-      // let innerRadius = dimensions[0] / 8;
-      // let outerRadius = dimensions[0] / 4;
-      // let centerOffset = [0, 0, 0];
-      // const center = [
-      //   dimensions[0] / 2 + centerOffset[0],
-      //   dimensions[1] / 2 + centerOffset[1],
-      //   dimensions[2] / 2 + centerOffset[2],
-      // ];
 
       let voxelIndex = 0;
 
       for (let z = 0; z < dimensions[2]; z++) {
         for (let y = 0; y < dimensions[1]; y++) {
           for (let x = 0; x < dimensions[0]; x++) {
-            segmentationVolume.scalarData[voxelIndex] = parseInt(actualSegmentationVolume.scalarData[voxelIndex])
+            segmentationVolume.scalarData[voxelIndex] = parseInt(
+              actualSegmentationVolume.scalarData[voxelIndex]
+            );
             voxelIndex++;
           }
         }
       }
-      console.log("LOADED")
+      console.log("LOADED");
     }
 
     /**
@@ -271,9 +273,11 @@ function Segmentation() {
       cornerstoneTools.addTool(SphereScissorsTool);
       cornerstoneTools.addTool(PaintFillTool);
       cornerstoneTools.addTool(BrushTool);
+      cornerstoneTools.addTool(TrackballRotateTool);
 
       // Define tool groups to add the segmentation display tool to
       const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+      const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);
 
       // Manipulation Tools
       toolGroup.addTool(PanTool.toolName);
@@ -341,6 +345,13 @@ function Segmentation() {
           activeStrategy: brushStrategies.ThresholdCircle,
         }
       );
+      toolGroup3d.addTool(SegmentationDisplayTool.toolName);
+      toolGroup3d.addTool(ZoomTool.toolName);
+      toolGroup3d.addTool(TrackballRotateTool.toolName, {
+        configuration: { volumeId },
+      });
+
+      toolGroup3d.setToolEnabled(SegmentationDisplayTool.toolName);
       toolGroup.setToolEnabled(SegmentationDisplayTool.toolName);
 
       toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
@@ -367,6 +378,7 @@ function Segmentation() {
           },
         ],
       });
+
       toolGroup.setToolActive(ZoomTool.toolName, {
         bindings: [
           {
@@ -374,15 +386,30 @@ function Segmentation() {
           },
         ],
       });
+
+      toolGroup3d.setToolActive(TrackballRotateTool.toolName, {
+        bindings: [
+          {
+            mouseButton: MouseBindings.Primary,
+          },
+        ],
+      });
+
+      toolGroup3d.setToolActive(ZoomTool.toolName, {
+        bindings: [
+          {
+            mouseButton: MouseBindings.Secondary, // Right Click
+          },
+        ],
+      });
+
       // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
       // hook instead of mouse buttons, it does not need to assign any mouse button.
       toolGroup.setToolActive(StackScrollMouseWheelTool.toolName);
 
       // This will load the nifti file, no need to call .load again for nifti
       await volumeLoader.createAndCacheVolume(volumeId);
-      await volumeLoader.createAndCacheVolume(segmentationURL)
-      
-
+      await volumeLoader.createAndCacheVolume(segmentationURL);
 
       // Add some segmentations based on the source data volume
       await addSegmentationsToState();
@@ -395,6 +422,7 @@ function Segmentation() {
       const viewportId1 = "CT_AXIAL";
       const viewportId2 = "CT_SAGITTAL";
       const viewportId3 = "CT_CORONAL";
+      const viewportId4 = "CT_3D";
 
       const viewportInputArray = [
         {
@@ -424,6 +452,14 @@ function Segmentation() {
             background: [0, 0, 0],
           },
         },
+        {
+          viewportId: viewportId4,
+          type: ViewportType.VOLUME_3D,
+          element: element4,
+          defaultOptions: {
+            background: [0.2, 0, 0.2],
+          },
+        },
       ];
 
       renderingEngine.setViewports(viewportInputArray);
@@ -431,13 +467,35 @@ function Segmentation() {
       toolGroup.addViewport(viewportId1, renderingEngineId);
       toolGroup.addViewport(viewportId2, renderingEngineId);
       toolGroup.addViewport(viewportId3, renderingEngineId);
+      toolGroup3d.addViewport(viewportId4, renderingEngineId);
 
       // Set volumes on the viewports
       await setVolumesForViewports(
         renderingEngine,
         [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-        [viewportId1, viewportId2, viewportId3]
-      );
+        [viewportId1, viewportId2, viewportId3, viewportId4]
+      ).then(() => {
+        const viewport3d = renderingEngine.getViewport(viewportId4);
+        const volumeActor = viewport3d.getDefaultActor().actor;
+        utilities.applyPreset(
+          volumeActor,
+          CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
+        );
+        viewport3d.render();
+      });
+
+      addDropdownToToolbar({
+        options: {
+          values: CONSTANTS.VIEWPORT_PRESETS.map((preset) => preset.name),
+          defaultValue: "CT-Bone",
+        },
+        onSelectedValueChange: (presetName) => {
+          const viewport3d = renderingEngine.getViewport(viewportId4);
+          viewport3d.setProperties({ preset: presetName });
+          viewport3d.render();
+        },
+        container: toolbarRef.current,
+      });
 
       // Add the segmentation representation to the toolgroup
       await segmentation.addSegmentationRepresentations(toolGroupId, [
@@ -447,8 +505,18 @@ function Segmentation() {
         },
       ]);
 
+      await segmentation.addSegmentationRepresentations(
+        toolGroupId3d,
+        [
+          {
+            segmentationId,
+            type: csToolsEnums.SegmentationRepresentations.Labelmap,
+          },
+        ]
+      );
+
       // Render the image
-      renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+      renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3, viewportId4]);
     }
 
     run();
