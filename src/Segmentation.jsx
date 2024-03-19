@@ -16,7 +16,7 @@ import {
 } from "./utils/demo/helpers";
 import { cornerstoneNiftiImageVolumeLoader } from "./nifti-volume-loader";
 
-const NIFTI_URL = "http://127.0.0.1:8080/axial.nii.gz";
+const NIFTI_URL = "Add Nifti Url Here";
 
 function Segmentation() {
   //Creating Refs
