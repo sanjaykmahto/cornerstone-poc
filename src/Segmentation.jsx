@@ -457,7 +457,7 @@ function Segmentation() {
           type: ViewportType.VOLUME_3D,
           element: element4,
           defaultOptions: {
-            background: [0.2, 0, 0.2],
+            background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
           },
         },
       ];
@@ -505,15 +505,27 @@ function Segmentation() {
         },
       ]);
 
-      await segmentation.addSegmentationRepresentations(
-        toolGroupId3d,
-        [
-          {
-            segmentationId,
-            type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      await segmentation.addSegmentationRepresentations(toolGroupId3d, [
+        {
+          segmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Surface,
+          options: {
+            polySeg: {
+              enabled: true,
+            },
           },
-        ]
-      );
+        },
+      ]);
+
+      // await segmentation.addSegmentationRepresentations(
+      //   toolGroupId3d,
+      //   [
+      //     {
+      //       segmentationId,
+      //       type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      //     },
+      //   ]
+      // );
 
       // Render the image
       renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3, viewportId4]);
